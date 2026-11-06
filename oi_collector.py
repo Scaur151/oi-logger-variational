@@ -33,7 +33,7 @@ def fetch():
     raise RuntimeError("fetch failed: %s" % last)
 def main():
     now = dt.datetime.now(dt.timezone.utc)
-    ts = now.strftime("%Y-%m-%dT%H:00:00Z")
+    ts = now.strftime("%Y-%m-%dT%H:%M:00Z")
     iso = now.isocalendar()
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, "oi_%d-W%02d.csv" % (iso[0], iso[1]))
