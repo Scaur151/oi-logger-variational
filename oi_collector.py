@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Variational Omni: снимок открытого интереса и спреда по ВСЕМ рынкам (свопы + перпы).
+"""Variational Omni: снимок открытого интереса и спреда только по SWAP-контрактам.
 Один запуск = один снимок. Пишет в data/oi_ГГГГ-Wнн.csv (неделя ISO, UTC).
 Колонки: ts_utc,ticker,contract_type,long_oi,short_oi,trader_oi,gross_oi,mark_price,volume_24h,funding,spread_bps
 trader_oi = long + short
@@ -45,6 +45,8 @@ def main():
     data = fetch()
     rows = []
     for l in data["listings"]:
+        if l.get("contract_type") != "swap":
+            continue
         oi = l.get("open_interest") or {}
         lo, so = num(oi.get("long_open_interest")), num(oi.get("short_open_interest"))
         trader = lo + so
@@ -58,7 +60,7 @@ def main():
         if new:
             w.writerow(COLS)
         w.writerows(rows)
-    print(ts, len(rows), "рынков ->", os.path.basename(path))
+    print(ts, len(rows), "свопов ->", os.path.basename(path))
 if __name__ == "__main__":
     try:
         main()
