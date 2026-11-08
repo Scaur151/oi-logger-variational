@@ -33,7 +33,7 @@ jobs:
           exit 1
       - name: Синхронизировать в публичный репозиторий
         env:
-          PUBLIC_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLIC_TOKEN: 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
         run: |
           git clone https://x-access-token:${PUBLIC_TOKEN}@github.com/Scaur151/oi-data-public.git /tmp/public
           cp data/oi_*.csv /tmp/public/
