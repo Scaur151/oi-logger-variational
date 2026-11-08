@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """Variational Omni: снимок открытого интереса и спреда только по SWAP-контрактам.
 Один запуск = один снимок. Пишет в data/oi_ГГГГ-Wнн.csv (неделя ISO, UTC).
-Колонки: ts_utc,ticker,contract_type,long_oi,short_oi,trader_oi,gross_oi,mark_price,volume_24h,funding,spread_bps
-trader_oi = long + short
-gross_oi  = trader_oi * 2
-spread_bps = base_spread_bps из API (спред в базисных пунктах)
+Колонки: ts_utc, ticker, oi, spread_pct
+oi = (long_oi + short_oi) * 2  — реальный open interest
+spread_pct = (base_spread_bps / 2) / 100  — half-spread в процентах (как на сайте)
 Только стандартная библиотека. Не падает на сетевых сбоях: 5 попыток, потом выходит с кодом 1.
 """
 import csv, json, os, sys, time, urllib.request, datetime as dt
 URL = "https://omni-client-api.prod.ap-northeast-1.variational.io/metadata/v2/stats"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-COLS = ["ts_utc", "ticker", "contract_type", "long_oi", "short_oi", "trader_oi", "gross_oi",
-        "mark_price", "volume_24h", "funding", "spread_bps"]
+COLS = ["ts_utc", "ticker", "oi", "spread_pct"]
 def num(x):
     try:
         return float(x)
@@ -21,7 +19,7 @@ def fetch():
     last = None
     for i in range(5):
         try:
-            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.2"})
+            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.3"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 d = json.load(r)
             if d.get("listings"):
@@ -47,13 +45,12 @@ def main():
     for l in data["listings"]:
         if l.get("contract_type") != "swap":
             continue
-        oi = l.get("open_interest") or {}
-        lo, so = num(oi.get("long_open_interest")), num(oi.get("short_open_interest"))
-        trader = lo + so
-        gross = trader * 2
-        rows.append([ts, l.get("ticker"), l.get("contract_type"), lo, so, trader, gross,
-                     num(l.get("mark_price")), num(l.get("volume_24h")), l.get("funding"),
-                     num(l.get("base_spread_bps"))])
+        oi_raw = l.get("open_interest") or {}
+        lo, so = num(oi_raw.get("long_open_interest")), num(oi_raw.get("short_open_interest"))
+        oi = (lo + so) * 2
+        spread_bps = num(l.get("base_spread_bps"))
+        spread_pct = (spread_bps / 2) / 100
+        rows.append([ts, l.get("ticker"), round(oi, 0), round(spread_pct, 6)])
     new = not os.path.exists(path)
     with open(path, "a", newline="") as fh:
         w = csv.writer(fh)
