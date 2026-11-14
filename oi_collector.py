@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Variational Omni: снимок открытого интереса и спреда только по SWAP-контрактам.
-Один запуск = один снимок. Пишет в data/oi_2026-W45.csv (фиксированный файл).
+Один запуск = один снимок. Пишет в data/oi_ГГГГ-Wнн.csv (неделя ISO, UTC).
 Колонки: ts_utc, ticker, oi, spread_pct, source
 oi = (long_oi + short_oi) * 2  — реальный open interest
 spread_pct = (base_spread_bps / 2) / 100  — half-spread в процентах (как на сайте)
@@ -12,7 +12,6 @@ URL = "https://omni-client-api.prod.ap-northeast-1.variational.io/metadata/v2/st
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 COLS = ["ts_utc", "ticker", "oi", "spread_pct", "source"]
 SOURCE = "scaurxyz"
-FILENAME = "oi_2026-W45.csv"
 def num(x):
     try:
         return float(x)
@@ -22,7 +21,7 @@ def fetch():
     last = None
     for i in range(5):
         try:
-            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.3"})
+            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.4"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 d = json.load(r)
             if d.get("listings"):
@@ -35,8 +34,10 @@ def fetch():
 def main():
     now = dt.datetime.now(dt.timezone.utc)
     ts = now.strftime("%Y-%m-%dT%H:%M:00Z")
+    iso = now.isocalendar()
+    filename = "oi_%d-W%02d.csv" % (iso[0], iso[1])
     os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, FILENAME)
+    path = os.path.join(OUT, filename)
     if os.path.exists(path):
         with open(path) as fh:
             if any(line.startswith(ts + ",") for line in fh):
@@ -59,7 +60,7 @@ def main():
         if new:
             w.writerow(COLS)
         w.writerows(rows)
-    print(ts, len(rows), "свопов ->", FILENAME)
+    print(ts, len(rows), "свопов ->", filename)
 if __name__ == "__main__":
     try:
         main()
