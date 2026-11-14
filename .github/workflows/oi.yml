@@ -1,46 +1,13 @@
 name: oi-collector
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
-permissions:
-  contents: write
-concurrency:
-  group: oi-collector
-  cancel-in-progress: false
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Снимок OI
+      - name: Test
         run: python3 oi_collector.py
-      - name: Сохранить в репозиторий
-        run: |
-          git config user.name "oi-bot"
-          git config user.email "oi-bot@users.noreply.github.com"
-          git add data
-          git diff --cached --quiet && exit 0
-          git commit -m "oi $(date -u +%Y-%m-%dT%H:%MZ)"
-          for i in 1 2 3 4 5; do
-            git pull --rebase -q && git push -q && exit 0
-            sleep 5
-          done
-          exit 1
-      - name: Синхронизировать в публичный репозиторий
-        env:
-          PUBLIC_TOKEN: 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
-        run: |
-          git clone https://x-access-token:${PUBLIC_TOKEN}@github.com/Scaur151/oi-data-public.git /tmp/public
-          cp data/oi_*.csv /tmp/public/
-          cd /tmp/public
-          git config user.name "oi-bot"
-          git config user.email "oi-bot@users.noreply.github.com"
-          git add oi_*.csv
-          git diff --cached --quiet && exit 0
-          git commit -m "sync $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push
