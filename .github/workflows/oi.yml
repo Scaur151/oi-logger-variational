@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: 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
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -33,7 +35,7 @@ jobs:
           exit 1
       - name: Синхронизировать в публичный репозиторий
         env:
-          PUBLIC_TOKEN: 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
+          PUBLIC_TOKEN: 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
         run: |
           git clone https://x-access-token:${PUBLIC_TOKEN}@github.com/Scaur151/oi-data-public.git /tmp/public
           cp data/oi_*.csv /tmp/public/
