@@ -21,7 +21,7 @@ def fetch():
     last = None
     for i in range(5):
         try:
-            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.4"})
+            req = urllib.request.Request(URL, headers={"User-Agent": "oi-logger/1.5"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 d = json.load(r)
             if d.get("listings"):
@@ -29,7 +29,10 @@ def fetch():
             last = "empty listings"
         except Exception as e:
             last = e
-        time.sleep(5 * (i + 1))
+            if "429" in str(e):
+                time.sleep(30 * (i + 1))
+                continue
+        time.sleep(10 * (i + 1))
     raise RuntimeError("fetch failed: %s" % last)
 def main():
     now = dt.datetime.now(dt.timezone.utc)
